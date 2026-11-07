@@ -22,7 +22,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 
 const TOP_KEYS = new Set(['ignore', 'rules', 'waivers', 'failOn', 'syntaxCheck', 'limits', 'discovery'])
 const LEVELS = new Set(['off', 'info', 'warn', 'error'])
-const FAIL_ON = new Set(['info', 'warn', 'error'])
+const FAIL_ON = new Set(['info', 'warn', 'error', 'none'])
 const LIMIT_KEYS = new Set([
   'maxFileBytes',
   'largeFileWarnBytes',
