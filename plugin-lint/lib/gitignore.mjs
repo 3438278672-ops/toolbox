@@ -6,7 +6,7 @@ function escapeRegex(ch) {
   return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function globToRegex(pattern) {
+export function globToRegex(pattern) {
   let out = ''
   for (let i = 0; i < pattern.length; i++) {
     const ch = pattern[i]
