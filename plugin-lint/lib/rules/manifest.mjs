@@ -1,6 +1,11 @@
+import { createRequire } from 'node:module'
+import path from 'node:path'
 import { globToRegex } from '../gitignore.mjs'
-import { exportTargets } from '../manifest.mjs'
+import { exportTargets, filesMatcher } from '../manifest.mjs'
+import { extractImports } from '../imports.mjs'
 import { packageRule } from './util.mjs'
+
+const SOURCE_RE = /\.(?:mjs|cjs|js)$/i
 
 const NAME_RE = /^[a-z0-9][a-z0-9._-]*$/
 const VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
@@ -188,6 +193,65 @@ export const MANIFEST_RULES = [
         })
       }
       return out
+    },
+  }),
+
+  packageRule({
+    id: 'PKG010',
+    category: 'manifest',
+    checklist: 'manifest',
+    severity: 'error',
+    async run(ctx) {
+      if (!ctx.manifest || !Array.isArray(ctx.manifest.files)) return null
+      const published = new Map(ctx.files.map((file) => [file.rel, file]))
+      const matcher = filesMatcher(ctx.manifest)
+      const queue = []
+
+      for (const item of exportTargets(ctx.manifest)) {
+        const target = normalizeRel(item.target)
+        if (target.includes('*')) {
+          const re = new RegExp(`^${globToRegex(target)}$`)
+          for (const rel of published.keys()) if (re.test(rel)) queue.push(rel)
+        } else {
+          queue.push(target)
+        }
+      }
+      if (ctx.patch?.rel) queue.push(normalizeRel(ctx.patch.rel))
+
+      const visited = new Set()
+      const missing = []
+      while (queue.length > 0 && visited.size < 2000) {
+        const rel = queue.shift()
+        if (visited.has(rel)) continue
+        visited.add(rel)
+        const file = published.get(rel)
+        if (!file) continue
+        if (!matcher(rel)) missing.push(rel)
+        if (file.kind !== 'text' || !SOURCE_RE.test(rel)) continue
+        let source
+        try {
+          source = await ctx.read(rel)
+        } catch {
+          continue
+        }
+        const require = createRequire(path.join(ctx.dir, ...rel.split('/')))
+        for (const item of extractImports(source)) {
+          if (!item.spec || !(item.spec.startsWith('./') || item.spec.startsWith('../') || item.spec.startsWith('/'))) continue
+          try {
+            const resolved = require.resolve(item.spec)
+            const next = path.relative(ctx.dir, resolved).replace(/\\/g, '/')
+            if (published.has(next)) queue.push(next)
+          } catch {
+            // 解析不到由 DEP001 报，这里不重复。
+          }
+        }
+      }
+
+      return missing.map((rel) => ({
+        file: rel,
+        message: `入口可达的运行时文件不在 files 白名单：${rel}`,
+        hint: '把该文件/目录加进 package.json 的 files；否则发布出去运行时就缺文件。',
+      }))
     },
   }),
 
