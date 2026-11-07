@@ -6,6 +6,7 @@ import { readManifest } from './manifest.mjs'
 import { parsePatchYaml } from './patch.mjs'
 import { walkPackage } from './walk.mjs'
 import { buildReport, verdictOf } from './report.mjs'
+import { discoverPackages } from './discover.mjs'
 import { RULES, RULE_BY_ID, PACKAGE_RULES, TEXT_RULES } from './rules/index.mjs'
 import { buildChecklist, countSeverities, severityFor } from './rules/util.mjs'
 
@@ -256,21 +257,70 @@ export async function analyzePackage(dir, options = {}) {
   }
 }
 
-export async function lint(request = {}) {
-  const { dirs, root, now = new Date(), failOn, syntax, syntaxOptions } = request
-  if (dirs && root) throw new Error('dirs 与 root 只能给一个')
-  if (!Array.isArray(dirs) || dirs.length === 0) {
-    throw new Error('还没有给扫描目录：传 dirs（指定目录）或 root（工作区发现）')
+function materializeTop(issue) {
+  const rule = RULE_BY_ID.get(issue.rule)
+  return {
+    rule: issue.rule,
+    category: rule?.category ?? 'config',
+    severity: rule ? severityFor(rule, 'package') : 'warn',
+    scope: 'package',
+    file: issue.file ?? null,
+    line: issue.line ?? null,
+    column: null,
+    message: String(issue.message ?? ''),
+    hint: String(issue.hint ?? ''),
+    snippet: null,
   }
+}
+
+export async function lint(request = {}) {
+  const { dirs, root, now = new Date(), failOn, syntax, syntaxOptions, depth } = request
+  if (dirs && root) throw new Error('dirs 与 root 只能给一个')
+  if (!dirs && !root) throw new Error('还没有给扫描目录：传 dirs（指定目录）或 root（工作区发现）')
+
+  const syntaxCheck = typeof syntax === 'boolean' ? syntax : undefined
+  const topFindings = []
+  let targets = []
+
+  if (Array.isArray(dirs) && dirs.length > 0) {
+    targets = dirs.map((dir) => path.resolve(dir))
+  } else if (Array.isArray(dirs)) {
+    throw new Error('dirs 不能是空数组')
+  } else {
+    const rootDir = path.resolve(root)
+    const { config: rootConfig, issues } = await loadConfig(rootDir, { knownRuleIds: KNOWN_RULE_IDS })
+    for (const issue of issues) topFindings.push(materializeTop(issue))
+    const discover = await discoverPackages(rootDir, {
+      depth: depth ?? rootConfig.discovery.depth,
+      ignore: rootConfig.ignore,
+    })
+    targets = discover.packages
+    if (targets.length === 0) {
+      const rule = RULE_BY_ID.get('DISCOVER001')
+      topFindings.push({
+        rule: 'DISCOVER001',
+        category: rule?.category ?? 'config',
+        severity: rule ? severityFor(rule, 'package') : 'info',
+        scope: 'package',
+        file: null,
+        line: null,
+        column: null,
+        message: `在 ${rootDir} 下没有发现插件包（depth=${depth ?? rootConfig.discovery.depth}）`,
+        hint: '显式传 dir/root；候选目录需要 package.json，并且有 dsh.bundle.patch 或 cordis.patch.yml。',
+        snippet: null,
+      })
+    }
+  }
+
   const packages = []
-  for (const dir of dirs) {
+  for (const dir of targets) {
     packages.push(
-      await analyzePackage(path.resolve(dir), {
+      await analyzePackage(dir, {
         failOn,
-        syntaxCheck: typeof syntax === 'boolean' ? syntax : undefined,
+        syntaxCheck,
         syntaxOptions,
       }),
     )
   }
-  return buildReport({ packages, topFindings: [], now, failOn })
+  return buildReport({ packages, topFindings, now, failOn })
 }
