@@ -1,7 +1,7 @@
 # dsh-plugin-lint 设计
 
 日期：2026-11-08
-状态：待确认（builder check 后修订）
+状态：已确认（2026-11-08 用户批准；builder check 后修订）
 
 ## 1. 意图
 
