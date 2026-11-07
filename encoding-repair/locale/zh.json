@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "编码修复",
+    "description": "把 GBK / UTF-16 / UTF-8 BOM 的插件文件转回 UTF-8"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Encoding Repair",
+    "description": "Convert GBK / UTF-16 / UTF-8 BOM plugin files back to UTF-8"
+  }
+}

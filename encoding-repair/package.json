@@ -1,0 +1,37 @@
+{
+  "name": "dsh-encoding-repair",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DSH 插件编码修复：GBK / UTF-16 / UTF-8 BOM 转回 UTF-8",
+  "license": "MIT",
+  "bin": {
+    "encoding-repair": "./bin/encoding-repair.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./icon.svg": "./icon.svg",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "bin",
+    "lib",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

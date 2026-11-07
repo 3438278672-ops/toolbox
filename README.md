@@ -5,7 +5,7 @@
 | 目录 | 说明 |
 |---|---|
 | [`plugin-lint/`](plugin-lint/) | DSH 插件发布前自检：绝对路径、编码、清单、依赖、凭证与发布卫生，输出「可发/不可发」检查单 |
-| `encoding-repair/` | 编码修复器（规划中）：把 GBK / UTF-16 / 乱码文件转回 UTF-8，作为 plugin-lint 的配套修复工具 |
+| [`encoding-repair/`](encoding-repair/) | 编码修复器：把 UTF-8 BOM / UTF-16 / UTF-32 / 可信 GBK 文件转回 UTF-8，默认只报告，`--fix` 才写且留 `.bak` |
 
 每个子目录都是一个独立可安装的 DSH 插件包。
 
@@ -35,3 +35,20 @@ node plugin-lint/bin/plugin-lint.mjs plugin-lint --json --out reports
 | 元信息 | WALK001-004、CFG001-004、DISCOVER001 | 扫描截断、配置与 waiver、发现结果 |
 
 退出码：`0` 可发、`1` 阻断、`2` 参数或运行失败。配置与豁免见 [`plugin-lint/README.md`](plugin-lint/README.md)。
+
+## encoding-repair
+
+默认只报告，不改文件：
+
+```bash
+node encoding-repair/bin/encoding-repair.mjs encoding-repair
+node encoding-repair/bin/encoding-repair.mjs --root . --depth 2 --json
+```
+
+确认要写回时加 `--fix`（同目录留 `.bak`，重名用 `.bak.1`）：
+
+```bash
+node encoding-repair/bin/encoding-repair.mjs encoding-repair --fix
+```
+
+只自动修复可逆的情况：UTF-8 BOM、UTF-16（含/无 BOM）、UTF-32 BOM、字节结构合法的 GBK。Big5、GBK/Big5 难分、已经二次转码的乱码只报告，不猜着写。安装后 DSH 里可用 `encoding_repair` 工具（默认 `fix=false`）。退出码：`0` 干净或全部修完、`1` 有待修或写入失败、`2` 参数或运行失败。
