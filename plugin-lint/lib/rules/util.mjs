@@ -37,6 +37,14 @@ export function finding(fields) {
   return fields
 }
 
+export function lineAt(text, index) {
+  let line = 1
+  for (let i = 0; i < index && i < text.length; i += 1) {
+    if (text.charCodeAt(i) === 10) line += 1
+  }
+  return line
+}
+
 export function countSeverities(findings) {
   const counts = { error: 0, warn: 0, info: 0 }
   for (const item of findings) {

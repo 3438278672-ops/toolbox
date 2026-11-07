@@ -18,10 +18,13 @@ function asArray(value) {
 
 function normalizeFinding(rule, scope, raw) {
   const item = raw && typeof raw === 'object' ? raw : {}
+  const declared = ['error', 'warn', 'info'].includes(item.severity)
+    ? item.severity
+    : severityFor(rule, scope)
   return {
     rule: rule.id,
     category: rule.category,
-    severity: severityFor(rule, scope),
+    severity: declared,
     scope,
     file: typeof item.file === 'string' ? item.file : null,
     line: Number.isInteger(item.line) ? item.line : null,
