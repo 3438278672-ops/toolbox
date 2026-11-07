@@ -35,7 +35,7 @@ function normalizeFinding(rule, scope, raw) {
   }
 }
 
-export function createContext({ dir, walk, manifest, manifestError, patch, config }) {
+export function createContext({ dir, walk, manifest, manifestError, patch, config, syntaxOptions }) {
   const sources = new Map()
   const buffers = new Map()
   const readErrors = [...(walk.readErrors ?? [])]
@@ -64,6 +64,7 @@ export function createContext({ dir, walk, manifest, manifestError, patch, confi
     manifestError,
     patch,
     config,
+    syntaxOptions,
     ...walk,
     readErrors,
     sources,
@@ -126,7 +127,9 @@ export async function analyzePackage(dir, options = {}) {
     manifestError,
     patch,
     config,
+    syntaxOptions: options.syntaxOptions,
   })
+  const syntaxCheck = options.syntaxCheck ?? config.syntaxCheck
   const disabled = new Set(Object.entries(config.rules).filter(([, level]) => level === 'off').map(([id]) => id))
   const onlyRules = options.onlyRules ? new Set(options.onlyRules) : null
   const canRun = (id) => !isDisabled(config, id) && (!onlyRules || onlyRules.has(id))
@@ -184,6 +187,7 @@ export async function analyzePackage(dir, options = {}) {
 
   for (const rule of PACKAGE_RULES) {
     if (!canRun(rule.id)) continue
+    if (rule.category === 'syntax' && !syntaxCheck) continue
     const out = await rule.run(ctx)
     for (const raw of asArray(out)) push(rule, 'package', raw)
   }
@@ -246,21 +250,27 @@ export async function analyzePackage(dir, options = {}) {
     waived: waived.length,
     truncated,
     files: walked.stats,
-    checklist: buildChecklist(full, { syntaxCheck: config.syntaxCheck }),
+    checklist: buildChecklist(full, { syntaxCheck }),
     findings: shown,
     disabledRules: [...disabled].sort(),
   }
 }
 
 export async function lint(request = {}) {
-  const { dirs, root, now = new Date(), failOn } = request
+  const { dirs, root, now = new Date(), failOn, syntax, syntaxOptions } = request
   if (dirs && root) throw new Error('dirs 与 root 只能给一个')
   if (!Array.isArray(dirs) || dirs.length === 0) {
     throw new Error('还没有给扫描目录：传 dirs（指定目录）或 root（工作区发现）')
   }
   const packages = []
   for (const dir of dirs) {
-    packages.push(await analyzePackage(path.resolve(dir), { failOn }))
+    packages.push(
+      await analyzePackage(path.resolve(dir), {
+        failOn,
+        syntaxCheck: typeof syntax === 'boolean' ? syntax : undefined,
+        syntaxOptions,
+      }),
+    )
   }
   return buildReport({ packages, topFindings: [], now, failOn })
 }

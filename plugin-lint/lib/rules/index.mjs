@@ -8,6 +8,7 @@ import { DEP_RULES } from './deps.mjs'
 import { SECRET_RULES } from './secrets.mjs'
 import { REPO_RULES } from './repo.mjs'
 import { DOC_RULES } from './docs.mjs'
+import { SYNTAX_RULES } from './syntax.mjs'
 
 export const RULES = [
   ...META_RULES,
@@ -19,6 +20,7 @@ export const RULES = [
   ...SECRET_RULES,
   ...REPO_RULES,
   ...DOC_RULES,
+  ...SYNTAX_RULES,
 ]
 export const RULE_BY_ID = new Map(RULES.map((rule) => [rule.id, rule]))
 export const PACKAGE_RULES = RULES.filter((rule) => rule.kind === 'package' && typeof rule.run === 'function')
