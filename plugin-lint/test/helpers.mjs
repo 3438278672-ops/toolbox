@@ -19,8 +19,7 @@ export function winPath(...parts) {
   return ['C:', ...parts].join('\\')
 }
 
-export function pluginFiles({ manifest = {}, extra = {} } = {}) {
-  const base = {
+export function pluginFiles({ manifest = {}, extra = {} } = {}) {  const base = {
     name: 'dsh-demo',
     version: '0.1.0',
     type: 'module',
@@ -39,4 +38,10 @@ export function pluginFiles({ manifest = {}, extra = {} } = {}) {
     '.gitignore': 'node_modules/\n',
     ...extra,
   }
+}
+
+export function without(files, ...keys) {
+  const copy = { ...files }
+  for (const key of keys) delete copy[key]
+  return copy
 }
