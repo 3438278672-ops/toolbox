@@ -1,18 +1,10 @@
 import { packageRule, textRule, severityFor } from './util.mjs'
-
-const CREDENTIAL_RE = /^(?:credential.*\.json|.*secret.*\.json|.*\.pem|.*\.key|id_rsa.*|\.env.*|.*\.p12|.*\.keystore)$/i
-const EXAMPLE_RE = /\.(?:example|sample)(?:\.|$)/i
-const PLACEHOLDER_RE = /(<[^>]+>|\.\.\.|\byour\b|\bexample\b|\bxxx\b|\bfoo\b|\bchangeme\b|\$\{|\bprocess\.env\b|\bREDACTED\b|\bdummy\b)/i
-
-const SECRET_PATTERNS = [
-  { label: '私钥块', re: /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/ },
-  { label: 'OpenAI/DeepSeek 密钥', re: /\bsk-[A-Za-z0-9_-]{16,}\b/ },
-  { label: 'GitHub token', re: /\b(?:ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/ },
-  { label: 'Slack token', re: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
-  { label: 'AWS access key', re: /\bAKIA[0-9A-Z]{16}\b/ },
-  { label: 'Bearer token', re: /\bBearer\s+([A-Za-z0-9._~+/=-]{20,})/ },
-  { label: '密码明文', re: /\bpassword\s*[:=]\s*['"]?([^\s'"]{6,})/i },
-]
+import {
+  CREDENTIAL_RE,
+  EXAMPLE_RE,
+  SECRET_PATTERNS,
+  SECRET_PLACEHOLDER_RE,
+} from './patterns.mjs'
 
 function basename(rel) {
   return rel.split('/').pop() || rel
@@ -67,7 +59,7 @@ export const SECRET_RULES = [
           const match = pattern.re.exec(lines[i])
           if (!match) continue
           const value = match[1] ?? match[0]
-          const placeholder = PLACEHOLDER_RE.test(value)
+          const placeholder = SECRET_PLACEHOLDER_RE.test(value)
           out.push({
             file: file.rel,
             line: i + 1,

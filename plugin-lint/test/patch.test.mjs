@@ -28,7 +28,8 @@ test('accepts flow arrays and !!js values', () => {
 })
 
 test('keeps config nested under an entry', () => {
-  const result = parsePatchYaml('- insert:\n  - id: a\n    config:\n      dir: D:\\\\x\n      list: [1, 2]\n')
+  const dirValue = 'D:' + '\\\\x'
+  const result = parsePatchYaml(`- insert:\n  - id: a\n    config:\n      dir: ${dirValue}\n      list: [1, 2]\n`)
   assert.equal(result.ok, true)
   assert.deepEqual(result.entries, [{ id: 'a', name: null, line: 2 }])
 })

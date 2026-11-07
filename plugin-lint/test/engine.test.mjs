@@ -27,7 +27,7 @@ function basePackage(extra = {}) {
 
 test('a minimal valid package is publishable and has a ten-item checklist', async (t) => {
   const dir = await makeTree(t, basePackage())
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   assert.equal(report.verdict, 'publishable')
   assert.deepEqual(report.counts, { error: 0, warn: 0, info: 0 })
   assert.equal(report.checklist.length, 10)
@@ -48,7 +48,7 @@ test('a minimal valid package is publishable and has a ten-item checklist', asyn
 
 test('published file stats include an unignored credential file', async (t) => {
   const dir = await makeTree(t, basePackage({ 'credential.json': '{"token":"x"}' }))
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   assert.equal(report.files.published, 7)
   assert.equal(report.files.ignored, 0)
 })
@@ -64,7 +64,7 @@ test('rules can be switched off and are reported as disabled', async (t) => {
       'big.txt': 'x'.repeat(50),
     }),
   )
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   assert.equal(report.findings.some((item) => item.rule === 'WALK001'), false)
   assert.deepEqual(report.disabledRules, ['WALK001'])
 })
@@ -77,7 +77,7 @@ test('WALK001 reports large skipped files and stays info', async (t) => {
       'big.txt': 'x'.repeat(50),
     }),
   )
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   const walk = report.findings.find((item) => item.rule === 'WALK001')
   assert.ok(walk)
   assert.equal(walk.severity, 'info')
@@ -107,7 +107,7 @@ test('an unused waiver becomes CFG004 instead of disappearing', async (t) => {
       }),
     }),
   )
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   const cfg = report.findings.find((item) => item.rule === 'CFG004')
   assert.ok(cfg)
   assert.equal(cfg.severity, 'warn')
@@ -122,7 +122,7 @@ test('maxFindings truncates the report but not the verdict or counts', async (t)
       '.pluginlint.json': JSON.stringify({ nope1: true, nope2: true, limits: { maxFindings: 1 } }),
     }),
   )
-  const report = await analyzePackage(dir)
+  const report = await analyzePackage(dir, { syntaxCheck: false })
   assert.equal(report.truncated, true)
   assert.ok(report.findings.some((item) => item.rule === 'WALK003'))
   assert.equal(report.counts.info, 3)
@@ -140,7 +140,7 @@ test('verdictOf honours failOn thresholds and none', () => {
 
 test('lint builds the JSON report and Markdown checklist', async (t) => {
   const dir = await makeTree(t, basePackage())
-  const report = await lint({ dirs: [dir], now: new Date('2026-11-08T00:00:00.000Z') })
+  const report = await lint({ dirs: [dir], syntax: false, now: new Date('2026-11-08T00:00:00.000Z') })
   assert.equal(report.schemaVersion, 1)
   assert.equal(report.generatedAt, '2026-11-08T00:00:00.000Z')
   assert.equal(report.tool.name, 'dsh-plugin-lint')

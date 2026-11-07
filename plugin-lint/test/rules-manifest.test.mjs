@@ -5,7 +5,7 @@ import { analyzePackage } from '../lib/engine.mjs'
 
 async function run(t, files) {
   const dir = await makeTree(t, files)
-  return analyzePackage(dir)
+  return analyzePackage(dir, { syntaxCheck: false })
 }
 
 function rules(report) {

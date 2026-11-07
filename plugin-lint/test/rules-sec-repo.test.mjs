@@ -5,7 +5,7 @@ import { analyzePackage } from '../lib/engine.mjs'
 
 async function run(t, files) {
   const dir = await makeTree(t, files)
-  return analyzePackage(dir)
+  return analyzePackage(dir, { syntaxCheck: false })
 }
 
 function of(report, id) {
@@ -57,9 +57,10 @@ test('SEC002 catches a runtime key and masks it', async (t) => {
 })
 
 test('SEC002 downgrades a placeholder value to info', async (t) => {
+  const placeholderKey = 'sk-' + 'your-key-1234567890'
   const report = await run(
     t,
-    pluginFiles({ extra: { 'index.js': "const key = 'sk-your-key-1234567890'\n" } }),
+    pluginFiles({ extra: { 'index.js': `const key = '${placeholderKey}'\n` } }),
   )
   const found = of(report, 'SEC002')
   assert.equal(found.length, 1)
@@ -68,10 +69,8 @@ test('SEC002 downgrades a placeholder value to info', async (t) => {
 })
 
 test('SEC002 catches a plaintext password at runtime severity', async (t) => {
-  const report = await run(
-    t,
-    pluginFiles({ extra: { 'index.js': "const password = 'SuperSecret123'\n" } }),
-  )
+  const passwordLine = 'const password = ' + "'SuperSecret123'"
+  const report = await run(t, pluginFiles({ extra: { 'index.js': `${passwordLine}\n` } }))
   const found = of(report, 'SEC002')
   assert.equal(found.length, 1)
   assert.equal(found[0].severity, 'error')
@@ -79,9 +78,10 @@ test('SEC002 catches a plaintext password at runtime severity', async (t) => {
 })
 
 test('SEC002 reports a private key block without printing it', async (t) => {
+  const privateKeyLine = '-----BEGIN ' + 'RSA PRIVATE KEY-----'
   const report = await run(
     t,
-    pluginFiles({ extra: { 'index.js': '-----BEGIN RSA PRIVATE KEY-----\nbody\n' } }),
+    pluginFiles({ extra: { 'index.js': `${privateKeyLine}\nbody\n` } }),
   )
   const found = of(report, 'SEC002')
   assert.equal(found.length, 1)

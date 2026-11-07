@@ -6,7 +6,7 @@ import { analyzePackage } from '../lib/engine.mjs'
 
 async function run(t, files) {
   const dir = await makeTree(t, files)
-  return analyzePackage(dir)
+  return analyzePackage(dir, { syntaxCheck: false })
 }
 
 function of(report, id) {
@@ -65,7 +65,7 @@ test('DEP005 rejects a relative import that resolves outside the package', async
     ),
   }
   const root = await makeTree(t, files)
-  const report = await analyzePackage(path.join(root, 'pkg'))
+  const report = await analyzePackage(path.join(root, 'pkg'), { syntaxCheck: false })
   assert.equal(of(report, 'DEP005').length, 1)
 })
 

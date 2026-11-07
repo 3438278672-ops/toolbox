@@ -1,0 +1,9 @@
+{
+  "waivers": [
+    {
+      "file": "lib/rules/patterns.mjs",
+      "rules": ["PAT001", "SEC002", "ENC004"],
+      "reason": "规则特征表本身就是检测样本（例如乱码标记），属于检测器而不是被检内容"
+    }
+  ]
+}

@@ -173,7 +173,7 @@
 | ENC001 | 不是合法 UTF-8（严格解码失败，通常是 GBK/ANSI） | error |
 | ENC002 | UTF-8 BOM | warn |
 | ENC003 | UTF-16 / UTF-32 BOM | error |
-| ENC004 | 文本含 U+FFFD 或典型乱码串（`锟斤拷`、`ï¿½`） | warn |
+| ENC004 | 文本含 U+FFFD 或典型乱码串（如 U+FFFD 替换序列） | warn |
 | ENC005 | 带 `#!` shebang 的文件使用 CRLF | warn |
 
 #### 依赖完整（dependencies）

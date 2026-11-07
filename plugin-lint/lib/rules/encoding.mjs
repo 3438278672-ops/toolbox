@@ -1,11 +1,11 @@
 import { lineAt, textRule } from './util.mjs'
+import { MOJIBAKE_MARKERS } from './patterns.mjs'
 
 const UTF8_BOM = [0xef, 0xbb, 0xbf]
 const UTF16_LE = [0xff, 0xfe]
 const UTF16_BE = [0xfe, 0xff]
 const UTF32_LE = [0xff, 0xfe, 0x00, 0x00]
 const UTF32_BE = [0x00, 0x00, 0xfe, 0xff]
-const MOJIBAKE = ['\uFFFD', '锟斤拷', 'ï¿½']
 const strictUtf8 = new TextDecoder('utf-8', { fatal: true })
 
 function startsWith(buf, bytes) {
@@ -103,7 +103,7 @@ export const ENCODING_RULES = [
         return null
       }
       let best = null
-      for (const marker of MOJIBAKE) {
+      for (const marker of MOJIBAKE_MARKERS) {
         const index = source.indexOf(marker)
         if (index >= 0 && (!best || index < best.index)) best = { index, marker }
       }

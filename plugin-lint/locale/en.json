@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Plugin Lint",
+    "description": "Pre-publish checks for DSH plugins: manifest, patch, hardcoded paths, encoding, dependencies, secrets, repository hygiene, display assets and syntax"
+  }
+}

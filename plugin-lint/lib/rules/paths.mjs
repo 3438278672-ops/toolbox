@@ -1,20 +1,11 @@
 import { severityFor, textRule } from './util.mjs'
-
-const PATTERNS = [
-  /(?:^|[^A-Za-z0-9])([A-Za-z]:[\\/][^\s"'`)]*)/,
-  /(\\\\[A-Za-z0-9._-]+\\[^\s"'`)]*)/,
-  /(?:^|[\s"'(=])(\/(?:home|Users|root|opt|mnt|var|tmp)\/[^\s"'`)]*)/,
-  /(file:\/\/\/[^\s"'`)]*)/,
-]
-
-const URL_RE = /https?:\/\/[^\s"'`)]+/g
-const PLACEHOLDER_RE = /(<[^>]+>|\.\.\.|path[\\/]+to\b|\byour\b|\bexample\b|\bxxx\b|\bfoo\b)/i
+import { PATH_PATTERNS, PATH_PLACEHOLDER_RE, PATH_URL_RE } from './patterns.mjs'
 
 function urlSpans(line) {
   const spans = []
-  URL_RE.lastIndex = 0
+  PATH_URL_RE.lastIndex = 0
   let match
-  while ((match = URL_RE.exec(line))) spans.push([match.index, match.index + match[0].length])
+  while ((match = PATH_URL_RE.exec(line))) spans.push([match.index, match.index + match[0].length])
   return spans
 }
 
@@ -30,7 +21,7 @@ function redact(text) {
 function firstHit(line) {
   const spans = urlSpans(line)
   let best = null
-  for (const pattern of PATTERNS) {
+  for (const pattern of PATH_PATTERNS) {
     const match = pattern.exec(line)
     if (!match) continue
     const token = match[1]
@@ -53,7 +44,7 @@ export const PATH_RULES = [
       for (let i = 0; i < lines.length; i += 1) {
         const hit = firstHit(lines[i])
         if (!hit) continue
-        const placeholder = PLACEHOLDER_RE.test(hit.token)
+        const placeholder = PATH_PLACEHOLDER_RE.test(hit.token)
         const severity = severityFor(
           { severity: { runtime: 'error', test: 'warn', docs: 'info' } },
           file.scope,

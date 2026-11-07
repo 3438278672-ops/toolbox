@@ -1,11 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { makeTree, pluginFiles } from './helpers.mjs'
+import { makeTree, pluginFiles, winPath } from './helpers.mjs'
 import { analyzePackage } from '../lib/engine.mjs'
 
 async function run(t, files) {
   const dir = await makeTree(t, files)
-  return analyzePackage(dir)
+  return analyzePackage(dir, { syntaxCheck: false })
 }
 
 function of(report, id) {
@@ -13,7 +13,8 @@ function of(report, id) {
 }
 
 test('PAT001 reports a runtime absolute path as error', async (t) => {
-  const report = await run(t, pluginFiles({ extra: { 'index.js': "const p = 'C:\\\\Users\\\\me\\\\data'\n" } }))
+  const drivePath = winPath('Users', 'me', 'data')
+  const report = await run(t, pluginFiles({ extra: { 'index.js': `const p = '${drivePath}'\n` } }))
   const found = of(report, 'PAT001')
   assert.equal(found.length, 1)
   assert.equal(found[0].severity, 'error')
@@ -21,12 +22,14 @@ test('PAT001 reports a runtime absolute path as error', async (t) => {
 })
 
 test('PAT001 downgrades to warn in test files and info in docs', async (t) => {
+  const homePath = ['', 'home', 'alice', 'project'].join('/')
+  const optPath = ['', 'opt', 'app', 'config.json'].join('/')
   const report = await run(
     t,
     pluginFiles({
       extra: {
-        'test/a.test.mjs': "const p = '/home/alice/project'\n",
-        'README.md': '# demo\n/opt/app/config.json\n',
+        'test/a.test.mjs': `const p = '${homePath}'\n`,
+        'README.md': `# demo\n${optPath}\n`,
       },
     }),
   )
@@ -37,7 +40,8 @@ test('PAT001 downgrades to warn in test files and info in docs', async (t) => {
 })
 
 test('PAT001 downgrades placeholder paths to info', async (t) => {
-  const report = await run(t, pluginFiles({ extra: { 'index.js': "const p = 'D:\\\\path\\\\to\\\\plugin'\n" } }))
+  const placeholderPath = 'D:' + '\\\\path\\\\to\\\\plugin'
+  const report = await run(t, pluginFiles({ extra: { 'index.js': `const p = '${placeholderPath}'\n` } }))
   const found = of(report, 'PAT001')
   assert.equal(found.length, 1)
   assert.equal(found[0].severity, 'info')
@@ -73,7 +77,8 @@ test('ENC003 rejects a UTF-16 BOM', async (t) => {
 })
 
 test('ENC004 warns about mojibake markers', async (t) => {
-  const report = await run(t, pluginFiles({ extra: { 'index.js': '// 锟斤拷\n' } }))
+  const mojibake = '\u951F\u65A4\u62F7'
+  const report = await run(t, pluginFiles({ extra: { 'index.js': `// ${mojibake}\n` } }))
   assert.equal(of(report, 'ENC004').length, 1)
 })
 

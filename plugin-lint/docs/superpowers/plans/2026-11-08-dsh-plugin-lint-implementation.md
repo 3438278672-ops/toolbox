@@ -406,10 +406,10 @@ verdictOf(findings, failOn) -> "publishable"|"blocked"
 
 - `patterns.mjs` 只放数据：`ABS_PATH`、`PLACEHOLDER`、`URL`、`SECRET`、`MOJIBAKE`、`CREDENTIAL_FILE`、`EXAMPLE_FILE`。**不要在这里写注释里的真实路径示例**；需要示例用 `<path>`。
 - PAT001：对每个 text 文件逐行匹配 `ABS_PATH`（`\b[A-Za-z]:\\`、`\\\\[^\\\s]+\\`、`/(home|Users|root|opt|mnt|var|tmp)/`、`file:///`）；行内若在 `http(s)://` 的 URL 区间则跳过；命中片段含 `PLACEHOLDER`（`<...>`、`...`、`path\to`、`your`、`example`、`xxx`、`foo`）→ info + 「示例路径」；否则按 scope（runtime error / test warn / docs info）。snippet 取该行、最多 120 字符、把盘符后两段用 `…` 打码。
-- ENC001：`TextDecoder("utf-8",{fatal:true})` 解码失败 → error（附「疑似 GBK/ANSI」）；ENC002：`EF BB BF` → warn；ENC003：`FF FE`/`FE FF`/`FF FE 00 00`/`00 00 FE FF` → error；ENC004：解码成功但含 `\uFFFD` 或 `MOJIBAKE`（`锟斤拷`、`ï¿½`）→ warn；ENC005：以 `#!` 开头且含 `\r\n` → warn。ENC001 命中时不再跑 ENC004（避免双报）。
+- ENC001：`TextDecoder("utf-8",{fatal:true})` 解码失败 → error（附「疑似 GBK/ANSI」）；ENC002：`EF BB BF` → warn；ENC003：`FF FE`/`FE FF`/`FF FE 00 00`/`00 00 FE FF` → error；ENC004：解码成功但含 `\uFFFD` 或 `MOJIBAKE`（典型乱码串）→ warn；ENC005：以 `#!` 开头且含 `\r\n` → warn。ENC001 命中时不再跑 ENC004（避免双报）。
 - 文本规则只对 `file.kind === "text"` 执行；`binary/large` 跳过。
 
-**Tests:** runtime/test/docs 三级；URL 内 `/home/` 不报；占位符 `D:\...\path\to` 降 info；GBK 字节（`new Uint8Array([0xD6,0xD0])` 写文件）→ ENC001；UTF-8 BOM → ENC002；UTF-16LE BOM → ENC003；`锟斤拷` → ENC004；shebang CRLF → ENC005；全部只报对应规则。
+**Tests:** runtime/test/docs 三级；URL 内 `/home/` 不报；占位符 `D:\...\path\to` 降 info；GBK 字节（`new Uint8Array([0xD6,0xD0])` 写文件）→ ENC001；UTF-8 BOM → ENC002；UTF-16LE BOM → ENC003；典型乱码串 → ENC004；shebang CRLF → ENC005；全部只报对应规则。
 
 **Verify:** `node test/rules-paths-encoding.test.mjs`。
 
@@ -452,7 +452,7 @@ extractImports(source) -> [{ spec, line, column, dynamic, type: "import"|"export
 **Implementation:**
 
 - SEC001：published 的 `rel` basename 命中 `CREDENTIAL_FILE`（`credential*.json`、`*secret*.json`、`*.pem`、`*.key`、`id_rsa*`、`.env*`、`*.p12`、`*.keystore`），但 `EXAMPLE_FILE`（`*.example.*`、`*.sample.*`、`.env.example`）除外 → error；hint 按设计口径。
-- SEC002：text 文件命中 `SECRET`（私钥块、`sk-`、`ghp_`、`xox[baprs]-`、`AKIA...`、长 Bearer、`password=`）；runtime error / test warn / docs error；值打码为 `类型…(N chars)`；占位符（`your`、`xxx`、`example`、`<...>`、`...`）→ info。
+- SEC002：text 文件命中 `SECRET`（私钥块、`sk-`、`ghp_`、`xox[baprs]-`、`AKIA...`、长 Bearer、`password` 赋值）；runtime error / test warn / docs error；值打码为 `类型…(N chars)`；占位符（`your`、`xxx`、`example`、`<...>`、`...`）→ info。
 - SEC003：`ignoredFiles` 命中凭证名，或 published 命中示例名 → info。
 - REPO001：published 无 `.gitignore` → warn；REPO002：`prunedDirs` 有 `node_modules` 且 `ignored:false` → error；REPO003/004：published 文件 size 超阈值 → warn/error；REPO005：`.venv`/`__pycache__`/`.cache` 未忽略 → info。
 - DOC001：published 无 `README.md`（大小写不敏感）→ warn；DOC002：manifest.license 存在但无 `LICENSE*` → warn。
