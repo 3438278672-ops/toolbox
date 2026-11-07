@@ -1,0 +1,4 @@
+- insert:
+    - id: plugin-lint
+      name: dsh-plugin-lint
+      config: {}

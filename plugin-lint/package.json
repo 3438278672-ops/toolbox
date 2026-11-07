@@ -1,0 +1,37 @@
+{
+  "name": "dsh-plugin-lint",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DSH 插件发布前自检：绝对路径、编码、清单、依赖与发布卫生",
+  "license": "MIT",
+  "bin": {
+    "plugin-lint": "./bin/plugin-lint.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./icon.svg": "./icon.svg",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "bin",
+    "lib",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
